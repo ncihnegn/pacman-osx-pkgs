@@ -2,7 +2,7 @@
 
 pkgname=bash
 _basever=4.3
-_patchlevel=22
+_patchlevel=30
 pkgver=$_basever.$_patchlevel
 pkgrel=1
 pkgdesc='The GNU Bourne Again shell'
@@ -10,8 +10,7 @@ pkgdesc='The GNU Bourne Again shell'
 arch=('x86_64')
 license=('GPL')
 url='http://www.gnu.org/software/bash/bash.html'
-source=('http://ftpmirror.gnu.org/bash/bash-4.3.tar.gz'
-        'https://gist.githubusercontent.com/jacknagel/c1cf23775c774e2b4b6d/raw/abd9bd4289bb443684ba26d5a2d3fb9449bbfa90/bash-4.3.22.diff')
+source=(http://ftpmirror.gnu.org/bash/bash-$pkgver.tar.gz)
 
 groups=('base')
 backup=(usr/local/etc/bash.bash{rc,_logout}
@@ -20,16 +19,8 @@ depends=('readline>=6.3')
 provides=('sh')
 
 
-prepare() {
-    pushd ${srcdir}/${pkgname}-$_basever > /dev/null
-
-    patch -Np1 -i ${srcdir}/bash-$pkgver.diff
-
-    popd
-}
-
 build() {
-    pushd ${srcdir}/${pkgname}-$_basever > /dev/null
+    pushd ${srcdir}/${pkgname}-$pkgver > /dev/null
     ./configure --prefix=/usr/local \
                 --with-installed-readline
     make
@@ -37,10 +28,9 @@ build() {
 }
 
 package() {
-    pushd ${srcdir}/${pkgname}-$_basever > /dev/null
+    pushd ${srcdir}/${pkgname}-$pkgver > /dev/null
     make DESTDIR=${pkgdir} install
     popd
 }
 
-md5sums=('81348932d5da294953e15d4814c74dd1'
-         '4f4cea522910768c18c48878b21fa781')
+md5sums=('a27b3ee9be83bd3ba448c0ff52b28447')

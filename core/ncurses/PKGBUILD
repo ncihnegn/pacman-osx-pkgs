@@ -1,0 +1,67 @@
+#
+
+pkgname=ncurses
+provides=ncurses
+replaces=ncurses
+basever=5.9
+patchlevel=20150425
+pkgver=${basever}.${patchlevel}
+pkgrel=1
+pkgdesc="Free software emulation of curses"
+arch=('x86_64')
+url="http://www.gnu.org/software/ncurses/"
+license=('MIT')
+source=("ftp://invisible-island.net/ncurses/current/ncurses-${basever}-${patchlevel}.tgz")
+
+build() {
+  cd ${srcdir}
+
+  mv ncurses-$basever-$patchlevel ncurses-$basever
+  mkdir -p ncurses{,w}-build
+
+  cd ${srcdir}/ncursesw-build
+  ../${pkgname}-${basever}/configure --prefix=/usr/local --mandir=/usr/local/share/man \
+     --with-shared --with-normal --without-debug --without-ada \
+     --enable-widec --enable-pc-files
+  # add --enable-ext-colors and --enable-ext-mouse with next soname bump
+  make
+
+  # libraries for external binary support
+  cd ${srcdir}/ncurses-build
+  [ $CARCH = "x86_64" ] && CONFIGFLAG="--with-chtype=long"
+  ../${pkgname}-${basever}/configure --prefix=/usr/local \
+    --with-shared --with-normal --without-debug --without-ada $CONFIGFLAG
+  make
+}
+
+package() {
+  cd ${srcdir}/ncursesw-build
+  make DESTDIR=${pkgdir} install
+
+  # fool packages looking to link to non-wide-character ncurses libraries
+  for lib in ncurses form panel menu; do
+    echo "INPUT(-l${lib}w)" >${pkgdir}/usr/local/lib/lib${lib}.so
+  done
+
+  for lib in ncurses ncurses++ form panel menu; do
+    ln -s ${lib}w.pc ${pkgdir}/usr/local/lib/pkgconfig/${lib}.pc
+  done
+
+  # some packages look for -lcurses during build
+  echo "INPUT(-lncursesw)" >${pkgdir}/usr/local/lib/libcursesw.so
+  ln -s libncurses.so ${pkgdir}/usr/local/lib/libcurses.so
+
+  # non-widec compatibility libraries
+  cd ${srcdir}/ncurses-build
+  for lib in ncurses form panel menu; do
+    install -dm755 lib/lib${lib}.so.${basever} ${pkgdir}/usr/local/lib/lib${lib}.so.${basever}
+    ln -s lib${lib}.so.${basever} ${pkgdir}/usr/local/lib/lib${lib}.so.5
+  done
+
+  # install license, rip it from the readme
+  cd ${srcdir}/${pkgname}-${basever}
+  install -dm755 ${pkgdir}/usr/local/share/licenses/$pkgname
+  grep -B 100 '$Id' README > ${pkgdir}/usr/local/share/licenses/${pkgname}/license.txt
+}
+
+md5sums=('70a1e44b85bbc9a41ce823528373533b')
